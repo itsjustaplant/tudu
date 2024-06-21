@@ -7,12 +7,3 @@ pub enum Screen {
     Main,
     Add,
 }
-
-pub enum Action {
-    Exit,
-    GetTasks,
-    OpenAddScreen,
-    AddTask,
-    EditTask,
-    Input,
-}
