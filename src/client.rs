@@ -43,6 +43,7 @@ impl Client {
 
     pub fn crete_todos_table(&self) -> Result<usize, Error> {
         let query = "CREATE TABLE IF NOT EXISTS todos (
+                     id INTEGER NOT NULL PRIMARY KEY,
                      title TEXT,
                      status TEXT
                     );";
@@ -58,8 +59,9 @@ impl Client {
         let mut stmt = self.get_connection().prepare("SELECT * FROM todos")?;
         let rows = stmt.query_map([], |row| {
             Ok(Task {
-                title: row.get(0)?,
-                status: row.get(1)?,
+                id: row.get(0)?,
+                title: row.get(1)?,
+                status: row.get(2)?,
             })
         })?;
 
@@ -84,12 +86,24 @@ impl Client {
             .map_err(|e| Error::new(ErrorKind::Other, format!("Could not insert task, e: {}", e)))
     }
 
-    pub fn test(&self) {
+    pub fn remove_task(&self, id: i32) -> Result<usize, Error> {
+        self.get_connection()
+            .execute(format!("DELETE FROM todos where id='{}'", id).as_str(), [])
+            .map_err(|e| Error::new(ErrorKind::Other, format!("Could not remove task, e: {}", e)))
+    }
+
+    pub fn update_task(&self, id: i32, current_status: &str) -> Result<usize, Error> {
+        let new_status = if current_status == "in-progress" {
+            // TODO: enumerate this
+            "completed"
+        } else {
+            "in-progress"
+        };
         self.get_connection()
             .execute(
-                "INSERT INTO todos (title, status) VALUES('delete this', 'in-progress')",
+                format!("UPDATE todos SET status='{}' WHERE id='{}'", new_status, id).as_str(),
                 [],
             )
-            .unwrap();
+            .map_err(|e| Error::new(ErrorKind::Other, format!("Could not update task, e: {}", e)))
     }
 }

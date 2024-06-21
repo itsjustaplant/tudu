@@ -7,4 +7,5 @@ pub struct State {
     pub running: bool,
     pub screen: Screen,
     pub line: i32,
+    pub input: String,
 }
