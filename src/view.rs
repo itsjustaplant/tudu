@@ -114,7 +114,7 @@ impl View {
     }
 
     fn draw_error(frame: &mut Frame, state: &State, area: Rect) {
-        let widget = Paragraph::new(state.error.as_str())
+        let widget = Paragraph::new(state.get_error().as_str())
             .alignment(Alignment::Left)
             .block(Block::default().borders(Borders::NONE));
 

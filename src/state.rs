@@ -12,6 +12,10 @@ pub struct State {
 }
 
 impl State {
+    pub fn get_error(&self) -> &String {
+        &self.error
+    }
+
     pub fn set_error(&mut self, error: String) {
         self.error = error;
     }
