@@ -21,6 +21,7 @@ pub enum Action {
     MenuUp,
     MenuDown,
     ToggleTaskStatus,
+    ResetError,
 }
 
 pub struct Controller {
@@ -36,30 +37,44 @@ impl Controller {
         }
     }
 
-    pub fn handle_action(&mut self, action: Action) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn handle_action(&mut self, action: Action) {
         match action {
-            Action::Exit => self.state.running = false,
+            Action::Exit => self.state.set_running(false),
             Action::GetTasks => {
-                self.state.task_list = self.client.get_tasks()?;
+                match self.client.get_tasks() {
+                    Ok(task_list) => {
+                        self.state.set_task_list(task_list);
+                        self.handle_action(Action::ResetError);
+                    }
+                    Err(_) => {
+                        self.state.set_error(String::from("Could not get tasks"));
+                    }
+                };
             }
             Action::MenuDown => {
-                if self.state.line < self.state.task_list.len() as i32 - 1 {
-                    self.state.line += 1;
+                let current_line = self.state.get_line();
+                if current_line < self.state.get_task_list().len() as i32 - 1 {
+                    self.state.set_line(current_line + 1);
                 }
             }
             Action::MenuUp => {
-                if self.state.line > 0 {
-                    self.state.line -= 1;
+                let current_line = self.state.get_line();
+                if current_line > 0 {
+                    self.state.set_line(current_line - 1);
                 }
             }
             Action::OpenMainScreen => {
-                self.state.screen = Screen::Main;
-                self.handle_action(Action::GetTasks)?;
+                self.state.set_screen(Screen::Main);
+                self.handle_action(Action::GetTasks);
+                self.handle_action(Action::ResetError);
             }
-            Action::OpenAddScreen => self.state.screen = Screen::Add,
+            Action::OpenAddScreen => {
+                self.state.set_screen(Screen::Add);
+                self.handle_action(Action::ResetError);
+            }
             Action::CancelAddTask => {
-                self.state.input = String::from("");
-                self.state.screen = Screen::Main;
+                self.state.set_screen(Screen::Main);
+                self.handle_action(Action::ResetError);
             }
             Action::InputChar(ch) => {
                 let len = self.state.input.len();
@@ -71,37 +86,41 @@ impl Controller {
                 let len = self.state.input.len();
                 self.state.input.drain(len - 1..len);
             }
-            Action::AddTask => {
-                self.client.create_task(&self.state.input)?;
-                self.state.input = String::from("");
-                self.handle_action(Action::OpenMainScreen)?;
-            }
+            Action::AddTask => match self.client.create_task(&self.state.input) {
+                Ok(_) => {
+                    self.state.set_input(String::from(""));
+                    self.handle_action(Action::OpenMainScreen);
+                }
+                Err(_) => self.state.set_error(String::from("Could not add task")),
+            },
             Action::RemoveTask => {
-                let index = self.state.line;
-                self.state.task_list.get(index as usize).map(|task| {
+                let index = self.state.get_line();
+                self.state.get_task_list().get(index as usize).map(|task| {
                     // TODO: propagate this error
                     let _ = self.client.remove_task(task.id);
                 });
-                self.handle_action(Action::GetTasks)?;
+                self.handle_action(Action::GetTasks);
             }
             Action::ToggleTaskStatus => {
-                let index = self.state.line;
-                self.state.task_list.get(index as usize).map(|task| {
+                let index = self.state.get_line();
+                self.state.get_task_list().get(index as usize).map(|task| {
                     // TODO: propagate this error
                     let _ = self.client.update_task(task.id, &task.status);
                 });
-                self.handle_action(Action::GetTasks)?;
+                self.handle_action(Action::GetTasks);
+            }
+            Action::ResetError => {
+                self.state.set_error(String::from(""));
             }
             Action::Empty => {}
         }
-        Ok(())
     }
 
     pub fn handle_events(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         if event::poll(std::time::Duration::from_millis(16))? {
             if let event::Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
-                    let action = match self.state.screen {
+                    let action = match self.state.get_screen() {
                         Screen::Main => match key.code {
                             KeyCode::Char('a') => Action::OpenAddScreen,
                             KeyCode::Char('x') => Action::RemoveTask,
@@ -119,7 +138,7 @@ impl Controller {
                             _ => Action::Empty,
                         },
                     };
-                    self.handle_action(action)?;
+                    self.handle_action(action);
                 }
             }
         }
@@ -130,8 +149,8 @@ impl Controller {
         filesystem::create_config_folder()?;
         self.client.open_connection()?;
         self.client.crete_todos_table()?;
-        self.state.running = true;
-        self.handle_action(Action::OpenMainScreen)?;
+        self.state.set_running(true);
+        self.handle_action(Action::OpenMainScreen);
         Ok(())
     }
 
@@ -146,7 +165,7 @@ impl Controller {
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.init_controller()?;
 
-        while self.state.running {
+        while self.state.get_running() {
             self.handle_events()?;
             View::draw(terminal, &self.state)?;
         }

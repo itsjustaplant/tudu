@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     prelude::{Backend, Terminal},
@@ -29,13 +31,26 @@ impl View {
         Ok(())
     }
 
-    fn draw_main_scene(frame: &mut Frame, area: Rect, state: &State) {
-        let selected_line = state.line;
-
-        let chunks = Layout::default()
+    fn get_chunks(area: Rect) -> (Rc<[Rect]>, Rc<[Rect]>) {
+        let outer_layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Min(0), Constraint::Length(3)].as_ref())
             .split(area);
+
+        let inner_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(outer_layout[1]);
+
+        return (outer_layout, inner_layout);
+    }
+
+    fn draw_main_scene(frame: &mut Frame, area: Rect, state: &State) {
+        let selected_line = state.line;
+
+        let chunks = View::get_chunks(area);
+        let outer_layout = chunks.0;
+        let inner_layout = chunks.1;
 
         let items: Vec<Span> = state
             .task_list
@@ -59,23 +74,22 @@ impl View {
         let list = List::new(items)
             .block(Block::default().borders(Borders::ALL).title("Task List"))
             .style(Style::default().fg(Color::White));
-        frame.render_widget(list, chunks[0]);
+        frame.render_widget(list, outer_layout[0]);
 
-        let bottom_text =
-            Paragraph::new("esc: Exit, a: Add, x: Remove, enter: Check/Uncheck, ↑: Up, ↓: Down ")
-                .alignment(Alignment::Left)
-                .block(Block::default().borders(Borders::NONE));
-
-        frame.render_widget(bottom_text, chunks[1]);
+        View::draw_legend(
+            frame,
+            "esc: Exit, a: Add, x: Remove, enter: Check/Uncheck, ↑: Up, ↓: Down",
+            inner_layout[0],
+        );
+        View::draw_error(frame, &state, inner_layout[1]);
     }
 
     fn draw_add_task_scene(frame: &mut Frame, area: Rect, state: &State) {
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Min(0), Constraint::Length(3)].as_ref())
-            .split(area);
-
         let content = &state.input;
+
+        let chunks = View::get_chunks(area);
+        let outer_layout = chunks.0;
+        let inner_layout = chunks.1;
 
         let input_field = Paragraph::new(String::from(content))
             .alignment(Alignment::Left)
@@ -85,11 +99,25 @@ impl View {
                     .title("Write the task, max 80 characters"),
             );
 
-        let bottom_text = Paragraph::new("esc: Cancel, enter: Save")
+        frame.render_widget(input_field, outer_layout[0]);
+
+        View::draw_legend(frame, "esc: Cancel, enter: Save", inner_layout[0]);
+        View::draw_error(frame, &state, inner_layout[1]);
+    }
+
+    fn draw_legend(frame: &mut Frame, text: &str, area: Rect) {
+        let widget = Paragraph::new(text)
             .alignment(Alignment::Left)
             .block(Block::default().borders(Borders::NONE));
 
-        frame.render_widget(input_field, chunks[0]);
-        frame.render_widget(bottom_text, chunks[1]);
+        frame.render_widget(widget, area);
+    }
+
+    fn draw_error(frame: &mut Frame, state: &State, area: Rect) {
+        let widget = Paragraph::new(state.error.as_str())
+            .alignment(Alignment::Left)
+            .block(Block::default().borders(Borders::NONE));
+
+        frame.render_widget(widget, area);
     }
 }
