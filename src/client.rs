@@ -74,12 +74,26 @@ impl Client {
     }
 
     pub fn create_task(&self, title: &str) -> Result<usize, Error> {
-        self.get_connection()
-            .execute(
-                "INSERT INTO todos (title, status) VALUES(?1, 'in-progress')",
-                [title],
-            )
-            .map_err(|e| Error::new(ErrorKind::Other, format!("Could not insert task, e: {}", e)))
+        match title.len() {
+            0 => Err(Error::new(ErrorKind::Other, "Task cannot be empty")),
+            len if len as i32 > constants::MAX_TASK_TITLE_LENGTH => Err(Error::new(
+                ErrorKind::Other,
+                format!(
+                    "Task title cannot be longer than {}, current length is {}",
+                    constants::MAX_TASK_TITLE_LENGTH,
+                    len
+                ),
+            )),
+            _ => self
+                .get_connection()
+                .execute(
+                    "INSERT INTO todos (title, status) VALUES(?1, 'in-progress')",
+                    [title],
+                )
+                .map_err(|e| {
+                    Error::new(ErrorKind::Other, format!("Could not insert task, e: {}", e))
+                }),
+        }
     }
 
     pub fn remove_task(&self, id: i32) -> Result<usize, Error> {

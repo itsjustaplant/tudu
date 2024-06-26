@@ -7,3 +7,5 @@ pub enum Screen {
     Main,
     Add,
 }
+
+pub const MAX_TASK_TITLE_LENGTH: i32 = 40;

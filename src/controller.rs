@@ -47,7 +47,7 @@ impl Controller {
                         self.handle_action(Action::ResetError);
                     }
                     Err(_) => {
-                        self.state.set_error("Could not get tasks");
+                        self.state.set_error(String::from("Could not get tasks"));
                     }
                 };
             }
@@ -78,9 +78,7 @@ impl Controller {
             }
             Action::InputChar(ch) => {
                 let len = self.state.input.len();
-                if len < 80 {
-                    self.state.input.insert(len, ch);
-                }
+                self.state.input.insert(len, ch);
             }
             Action::RemoveChar => {
                 let len = self.state.input.len();
@@ -91,7 +89,7 @@ impl Controller {
                     self.state.set_input("");
                     self.handle_action(Action::OpenMainScreen);
                 }
-                Err(_) => self.state.set_error("Could not add task"),
+                Err(e) => self.state.set_error(format!("{}", e)),
             },
             Action::RemoveTask => {
                 let index = self.state.get_line();
@@ -113,7 +111,7 @@ impl Controller {
                 self.handle_action(Action::GetTasks);
             }
             Action::ResetError => {
-                self.state.set_error("");
+                self.state.set_error(String::from(""));
             }
             Action::Empty => {}
         }
