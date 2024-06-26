@@ -76,34 +76,26 @@ impl Client {
     pub fn create_task(&self, title: &str) -> Result<usize, Error> {
         self.get_connection()
             .execute(
-                format!(
-                    "INSERT INTO todos (title, status) VALUES('{}', 'in-progress')",
-                    title
-                )
-                .as_str(),
-                [],
+                "INSERT INTO todos (title, status) VALUES(?1, 'in-progress')",
+                [title],
             )
             .map_err(|e| Error::new(ErrorKind::Other, format!("Could not insert task, e: {}", e)))
     }
 
     pub fn remove_task(&self, id: i32) -> Result<usize, Error> {
         self.get_connection()
-            .execute(format!("DELETE FROM todos where id='{}'", id).as_str(), [])
+            .execute("DELETE FROM todos where id=?1", [id])
             .map_err(|e| Error::new(ErrorKind::Other, format!("Could not remove task, e: {}", e)))
     }
 
     pub fn update_task(&self, id: i32, current_status: &str) -> Result<usize, Error> {
         let new_status = if current_status == "in-progress" {
-            // TODO: enumerate this
             "completed"
         } else {
             "in-progress"
         };
         self.get_connection()
-            .execute(
-                format!("UPDATE todos SET status='{}' WHERE id='{}'", new_status, id).as_str(),
-                [],
-            )
+            .execute("UPDATE todos SET status=?1 WHERE id=?2", (new_status, id))
             .map_err(|e| Error::new(ErrorKind::Other, format!("Could not update task, e: {}", e)))
     }
 }
