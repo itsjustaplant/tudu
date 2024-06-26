@@ -20,8 +20,8 @@ impl State {
         &self.error
     }
 
-    pub fn set_error(&mut self, error: &str) {
-        self.error = String::from(error);
+    pub fn set_error(&mut self, error: String) {
+        self.error = error;
     }
 
     pub fn get_input(&self) -> &String {
