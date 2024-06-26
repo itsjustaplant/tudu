@@ -27,7 +27,7 @@ impl Client {
             }
             Err(e) => Err(Error::new(
                 ErrorKind::Other,
-                format!("Could not close connection, e: {}", e),
+                format!("Could not open connection, e: {}", e),
             )),
         }
     }
