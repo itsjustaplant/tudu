@@ -53,7 +53,7 @@ impl Controller {
             }
             Action::MenuDown => {
                 let current_line = self.state.get_line();
-                if current_line < self.state.get_task_list().len() as i32 - 1 {
+                if current_line < self.state.get_task_list_length() - 1 {
                     self.state.set_line(current_line + 1);
                 }
             }
@@ -99,6 +99,9 @@ impl Controller {
                     // TODO: propagate this error
                     let _ = self.client.remove_task(task.id);
                 });
+                if index == self.state.get_task_list_length() - 1 {
+                    self.handle_action(Action::MenuUp)
+                }
                 self.handle_action(Action::GetTasks);
             }
             Action::ToggleTaskStatus => {

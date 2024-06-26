@@ -63,4 +63,8 @@ impl State {
     pub fn set_task_list(&mut self, task_list: Vec<Task>) {
         self.task_list = task_list;
     }
+
+    pub fn get_task_list_length(&self) -> i32 {
+        self.get_task_list().len() as i32
+    }
 }
