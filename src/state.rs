@@ -12,20 +12,24 @@ pub struct State {
 }
 
 impl State {
+    pub fn new() -> Self {
+        State::default()
+    }
+
     pub fn get_error(&self) -> &String {
         &self.error
     }
 
-    pub fn set_error(&mut self, error: String) {
-        self.error = error;
+    pub fn set_error(&mut self, error: &str) {
+        self.error = String::from(error);
     }
 
     pub fn get_input(&self) -> &String {
         &self.input
     }
 
-    pub fn set_input(&mut self, input: String) {
-        self.input = input;
+    pub fn set_input(&mut self, input: &str) {
+        self.input = String::from(input);
     }
 
     pub fn get_line(&self) -> i32 {

@@ -32,7 +32,7 @@ pub struct Controller {
 impl Controller {
     pub fn new() -> Self {
         Self {
-            state: State::default(),
+            state: State::new(),
             client: Client::default(),
         }
     }
@@ -47,7 +47,7 @@ impl Controller {
                         self.handle_action(Action::ResetError);
                     }
                     Err(_) => {
-                        self.state.set_error(String::from("Could not get tasks"));
+                        self.state.set_error("Could not get tasks");
                     }
                 };
             }
@@ -88,10 +88,10 @@ impl Controller {
             }
             Action::AddTask => match self.client.create_task(&self.state.input) {
                 Ok(_) => {
-                    self.state.set_input(String::from(""));
+                    self.state.set_input("");
                     self.handle_action(Action::OpenMainScreen);
                 }
-                Err(_) => self.state.set_error(String::from("Could not add task")),
+                Err(_) => self.state.set_error("Could not add task"),
             },
             Action::RemoveTask => {
                 let index = self.state.get_line();
@@ -110,7 +110,7 @@ impl Controller {
                 self.handle_action(Action::GetTasks);
             }
             Action::ResetError => {
-                self.state.set_error(String::from(""));
+                self.state.set_error("");
             }
             Action::Empty => {}
         }
