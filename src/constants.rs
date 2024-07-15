@@ -1,5 +1,5 @@
-pub const APP_PATH: &str = "todocli";
-pub const DB_NAME: &str = "todoclidb.db";
+pub const APP_PATH: &str = "tudu";
+pub const DB_NAME: &str = "tudu.db";
 
 #[derive(Debug, Default)]
 pub enum Screen {
