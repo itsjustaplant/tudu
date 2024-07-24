@@ -27,3 +27,17 @@ pub fn create_config_folder() -> Result<(), Error> {
         )),
     }
 }
+
+pub fn db_exists() -> bool {
+    let app_config_path = get_app_config_path();
+    match app_config_path {
+        Ok(mut acp) => {
+            acp.push(constants::DB_NAME);
+            fs::metadata(&acp).is_ok()
+        }
+        Err(_) => {
+            println!("nope");
+            false
+        }
+    }
+}

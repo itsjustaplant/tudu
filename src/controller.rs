@@ -2,7 +2,7 @@ use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::prelude::{Backend, Terminal};
 
 use crate::client::Client;
-use crate::constants::Screen;
+use crate::constants::{self, Screen};
 use crate::filesystem;
 use crate::state::State;
 use crate::view::View;
@@ -13,11 +13,14 @@ pub enum Action {
     GetTasks,
     OpenMainScreen,
     OpenAddScreen,
+    OpenGreetingsScreen,
     AddTask,
     CancelAddTask,
     RemoveTask,
     InputChar(char),
+    InputMaskedChar(char),
     RemoveChar,
+    RemoveMaskedChar,
     MenuUp,
     MenuDown,
     ToggleTaskStatus,
@@ -39,7 +42,7 @@ impl Controller {
 
     pub fn handle_action(&mut self, action: Action) {
         match action {
-            Action::Exit => self.state.set_running(false),
+            Action::Exit => self.state.set_is_running(false),
             Action::GetTasks => {
                 match self.client.get_tasks() {
                     Ok(task_list) => {
@@ -72,6 +75,9 @@ impl Controller {
                 self.state.set_screen(Screen::Add);
                 self.handle_action(Action::ResetError);
             }
+            Action::OpenGreetingsScreen => {
+                self.state.set_screen(Screen::Greetings);
+            }
             Action::CancelAddTask => {
                 self.state.set_screen(Screen::Main);
                 self.handle_action(Action::ResetError);
@@ -80,9 +86,24 @@ impl Controller {
                 let len = self.state.input.len();
                 self.state.input.insert(len, ch);
             }
+            Action::InputMaskedChar(ch) => {
+                let len = self.state.master_key.len();
+
+                if len as i32 <= constants::MAX_MASTER_KEY_LENGTH {
+                    self.state.master_key.insert(len, ch);
+                }
+            }
             Action::RemoveChar => {
                 let len = self.state.input.len();
-                self.state.input.drain(len - 1..len);
+                if len > 0 {
+                    self.state.input.drain(len - 1..len);
+                }
+            }
+            Action::RemoveMaskedChar => {
+                let len = self.state.master_key.len();
+                if len > 0 {
+                    self.state.master_key.drain(len - 1..len);
+                }
             }
             Action::AddTask => match self.client.create_task(&self.state.input) {
                 Ok(_) => {
@@ -138,6 +159,13 @@ impl Controller {
                             KeyCode::Backspace => Action::RemoveChar,
                             _ => Action::Empty,
                         },
+                        Screen::Greetings => match key.code {
+                            KeyCode::Esc => Action::Exit,
+                            KeyCode::Char(to_insert) => Action::InputMaskedChar(to_insert),
+                            KeyCode::Backspace => Action::RemoveMaskedChar,
+                            KeyCode::Enter => Action::OpenMainScreen,
+                            _ => Action::Empty,
+                        },
                     };
                     self.handle_action(action);
                 }
@@ -147,11 +175,15 @@ impl Controller {
     }
 
     pub fn init_controller(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let is_first_time = !filesystem::db_exists();
+
+        self.state.set_is_first_time(is_first_time);
+
         filesystem::create_config_folder()?;
+        self.handle_action(Action::OpenGreetingsScreen);
         self.client.open_connection()?;
         self.client.crete_todos_table()?;
-        self.state.set_running(true);
-        self.handle_action(Action::OpenMainScreen);
+        self.state.set_is_running(true);
         Ok(())
     }
 
@@ -166,7 +198,7 @@ impl Controller {
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.init_controller()?;
 
-        while self.state.get_running() {
+        while self.state.get_is_running() {
             self.handle_events()?;
             View::draw(terminal, &self.state)?;
         }
