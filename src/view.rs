@@ -26,6 +26,7 @@ impl View {
             match state.screen {
                 Screen::Main => View::draw_main_scene(frame, area, state),
                 Screen::Add => View::draw_add_task_scene(frame, area, state),
+                Screen::Greetings => View::draw_greetings_scene(frame, area, state),
             }
         })?;
         Ok(())
@@ -43,6 +44,37 @@ impl View {
             .split(outer_layout[1]);
 
         return (outer_layout, inner_layout);
+    }
+
+    fn draw_greetings_scene(frame: &mut Frame, area: Rect, state: &State) {
+        let chunks = View::get_chunks(area);
+        let outer_layout = chunks.0;
+        let inner_layout = chunks.1;
+
+        let message = if state.get_is_first_time() {
+            format!(
+            "
+              Hello there 👋, let's set a master key with numbers that is 10 char max and promise you will never forget!
+              {}
+            ",
+            String::from("*").repeat(state.master_key.len())
+            )
+        } else {
+            format!(
+                "
+              Hello there 👋, enter your master key please
+              {}
+            ",
+                String::from("*").repeat(state.master_key.len())
+            )
+        };
+        let widget = Paragraph::new(message)
+            .alignment(Alignment::Left)
+            .block(Block::default().borders(Borders::NONE));
+
+        frame.render_widget(widget, outer_layout[0]);
+        View::draw_legend(frame, "esc: Cancel, enter: Enter", inner_layout[0]);
+        View::draw_error(frame, &state, inner_layout[1]);
     }
 
     fn draw_main_scene(frame: &mut Frame, area: Rect, state: &State) {

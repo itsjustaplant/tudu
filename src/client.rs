@@ -5,6 +5,7 @@ use rusqlite::{Connection, Result};
 use crate::constants;
 use crate::filesystem::get_app_config_path;
 use crate::task::Task;
+use crate::user::User;
 
 #[derive(Debug, Default)]
 pub struct Client {
@@ -55,6 +56,19 @@ impl Client {
         })
     }
 
+    pub fn create_user_table(&self) -> Result<usize, Error> {
+        let query = "CREATE TABLE IF NOT EXISTS user (
+                   id INTEGER NOT NULL PRIMARY KEY,
+                   secret TEXT
+                  );";
+        self.get_connection().execute(query, []).map_err(|e| {
+            Error::new(
+                ErrorKind::Other,
+                format!("Could not create user table, e: {}", e),
+            )
+        })
+    }
+
     pub fn get_tasks(&self) -> Result<Vec<Task>> {
         let mut stmt = self.get_connection().prepare("SELECT * FROM todos")?;
         let rows = stmt.query_map([], |row| {
@@ -73,27 +87,41 @@ impl Client {
         Ok(tasks)
     }
 
-    pub fn create_task(&self, title: &str) -> Result<usize, Error> {
-        match title.len() {
-            0 => Err(Error::new(ErrorKind::Other, "Task cannot be empty")),
-            len if len as i32 > constants::MAX_TASK_TITLE_LENGTH => Err(Error::new(
-                ErrorKind::Other,
-                format!(
-                    "Task title cannot be longer than {}, current length is {}",
-                    constants::MAX_TASK_TITLE_LENGTH,
-                    len
-                ),
-            )),
-            _ => self
-                .get_connection()
-                .execute(
-                    "INSERT INTO todos (title, status) VALUES(?1, 'in-progress')",
-                    [title],
-                )
-                .map_err(|e| {
-                    Error::new(ErrorKind::Other, format!("Could not insert task, e: {}", e))
-                }),
+    pub fn create_task(&self, title: String) -> Result<usize, Error> {
+        self.get_connection()
+            .execute(
+                "INSERT INTO todos (title, status) VALUES(?1, 'in-progress')",
+                [format!("{:?}", title)],
+            )
+            .map_err(|e| Error::new(ErrorKind::Other, format!("Could not insert task, e: {}", e)))
+    }
+
+    pub fn create_user(&self, secret: String) -> Result<usize, Error> {
+        self.get_connection()
+            .execute(
+                "INSERT INTO user (secret) VALUES(?1)",
+                [format!("{:?}", secret)],
+            )
+            .map_err(|e| Error::new(ErrorKind::Other, format!("Could not insert user, e: {}", e)))
+    }
+
+    pub fn get_user(&self) -> Result<Vec<User>> {
+        let mut stmt = self
+            .get_connection()
+            .prepare("SELECT * FROM user where id=1")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(User {
+                id: row.get(0)?,
+                secret: row.get(1)?,
+            })
+        })?;
+
+        let mut user = Vec::new();
+        for user_result in rows {
+            user.push(user_result?);
         }
+
+        Ok(user)
     }
 
     pub fn remove_task(&self, id: i32) -> Result<usize, Error> {

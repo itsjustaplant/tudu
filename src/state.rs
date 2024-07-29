@@ -4,11 +4,13 @@ use crate::task::Task;
 #[derive(Debug, Default)]
 pub struct State {
     pub task_list: Vec<Task>,
-    pub running: bool,
+    pub is_running: bool,
     pub screen: Screen,
     pub line: i32,
     pub input: String,
     pub error: String,
+    pub is_first_time: bool,
+    pub master_key: String,
 }
 
 impl State {
@@ -48,12 +50,12 @@ impl State {
         self.screen = screen;
     }
 
-    pub fn get_running(&self) -> bool {
-        self.running
+    pub fn get_is_running(&self) -> bool {
+        self.is_running
     }
 
-    pub fn set_running(&mut self, new_state: bool) {
-        self.running = new_state;
+    pub fn set_is_running(&mut self, is_running: bool) {
+        self.is_running = is_running;
     }
 
     pub fn get_task_list(&self) -> &Vec<Task> {
@@ -66,5 +68,21 @@ impl State {
 
     pub fn get_task_list_length(&self) -> i32 {
         self.get_task_list().len() as i32
+    }
+
+    pub fn get_is_first_time(&self) -> bool {
+        self.is_first_time
+    }
+
+    pub fn set_is_first_time(&mut self, is_first_time: bool) {
+        self.is_first_time = is_first_time;
+    }
+
+    pub fn get_master_key(&self) -> &String {
+        &self.master_key
+    }
+
+    pub fn set_master_key(&mut self, master_key: String) {
+        self.master_key = master_key
     }
 }
