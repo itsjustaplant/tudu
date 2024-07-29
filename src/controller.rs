@@ -2,30 +2,11 @@ use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::prelude::{Backend, Terminal};
 
 use crate::client::Client;
-use crate::constants::{self, Screen};
+use crate::constants::{self, Action, Screen, MAX_TASK_TITLE_LENGTH, VERY_SECRET_TEXT};
+use crate::encdec::{decrypt, encrypt};
 use crate::filesystem;
 use crate::state::State;
 use crate::view::View;
-
-pub enum Action {
-    Empty,
-    Exit,
-    GetTasks,
-    OpenMainScreen,
-    OpenAddScreen,
-    OpenGreetingsScreen,
-    AddTask,
-    CancelAddTask,
-    RemoveTask,
-    InputChar(char),
-    InputMaskedChar(char),
-    RemoveChar,
-    RemoveMaskedChar,
-    MenuUp,
-    MenuDown,
-    ToggleTaskStatus,
-    ResetError,
-}
 
 pub struct Controller {
     pub state: State,
@@ -45,12 +26,16 @@ impl Controller {
             Action::Exit => self.state.set_is_running(false),
             Action::GetTasks => {
                 match self.client.get_tasks() {
-                    Ok(task_list) => {
+                    Ok(mut task_list) => {
+                        for task in task_list.iter_mut() {
+                            task.title =
+                                decrypt(task.title.as_str(), &self.state.get_master_key()).unwrap();
+                        }
                         self.state.set_task_list(task_list);
                         self.handle_action(Action::ResetError);
                     }
-                    Err(_) => {
-                        self.state.set_error(String::from("Could not get tasks"));
+                    Err(e) => {
+                        self.state.set_error(format!("{}", e));
                     }
                 };
             }
@@ -68,8 +53,7 @@ impl Controller {
             }
             Action::OpenMainScreen => {
                 self.state.set_screen(Screen::Main);
-                self.handle_action(Action::GetTasks);
-                self.handle_action(Action::ResetError);
+                self.handle_action(Action::CheckSecret);
             }
             Action::OpenAddScreen => {
                 self.state.set_screen(Screen::Add);
@@ -105,13 +89,58 @@ impl Controller {
                     self.state.master_key.drain(len - 1..len);
                 }
             }
-            Action::AddTask => match self.client.create_task(&self.state.input) {
-                Ok(_) => {
-                    self.state.set_input("");
-                    self.handle_action(Action::OpenMainScreen);
+            Action::AddTask => match self.state.input.len() {
+                0 => self
+                    .state
+                    .set_error(String::from("Please enter task title")),
+                len if len as i32 > MAX_TASK_TITLE_LENGTH => self.state.set_error(String::from(
+                    format!("Task title cannot be longer than {}", MAX_TASK_TITLE_LENGTH),
+                )),
+                _ => {
+                    let data = encrypt(&self.state.input, &self.state.get_master_key());
+                    match self.client.create_task(data) {
+                        Ok(_) => {
+                            self.state.set_input("");
+                            self.handle_action(Action::OpenMainScreen);
+                        }
+                        Err(e) => self.state.set_error(format!("{}", e)),
+                    }
                 }
-                Err(e) => self.state.set_error(format!("{}", e)),
             },
+            Action::AddSecret => {
+                let data = encrypt(VERY_SECRET_TEXT, &self.state.get_master_key());
+                match self.client.create_user(data) {
+                    Ok(_) => self.handle_action(Action::OpenMainScreen),
+                    Err(e) => self.state.set_error(format!("{}", e)),
+                }
+            }
+            Action::CheckSecret => {
+                let user_data = self.client.get_user();
+
+                match user_data {
+                    Ok(user_vec) => {
+                        let user_result = user_vec.get(0);
+                        match user_result {
+                            Some(user) => {
+                                let decrypted_text =
+                                    decrypt(user.secret.as_str(), &self.state.get_master_key());
+                                match decrypted_text {
+                                    Ok(_) => {
+                                        self.handle_action(Action::ResetError);
+                                        self.handle_action(Action::GetTasks);
+                                    }
+                                    Err(_) => {
+                                        self.state.set_error(String::from("Password is wrong"));
+                                        self.handle_action(Action::OpenGreetingsScreen);
+                                    }
+                                }
+                            }
+                            None => self.state.set_error(String::from("Could not get user")),
+                        }
+                    }
+                    Err(_) => self.state.set_error(String::from("Could not get user")),
+                }
+            }
             Action::RemoveTask => {
                 let index = self.state.get_line();
                 self.state.get_task_list().get(index as usize).map(|task| {
@@ -163,7 +192,13 @@ impl Controller {
                             KeyCode::Esc => Action::Exit,
                             KeyCode::Char(to_insert) => Action::InputMaskedChar(to_insert),
                             KeyCode::Backspace => Action::RemoveMaskedChar,
-                            KeyCode::Enter => Action::OpenMainScreen,
+                            KeyCode::Enter => {
+                                if self.state.get_is_first_time() {
+                                    Action::AddSecret
+                                } else {
+                                    Action::OpenMainScreen
+                                }
+                            }
                             _ => Action::Empty,
                         },
                     };
@@ -182,6 +217,7 @@ impl Controller {
         filesystem::create_config_folder()?;
         self.handle_action(Action::OpenGreetingsScreen);
         self.client.open_connection()?;
+        self.client.create_user_table()?;
         self.client.crete_todos_table()?;
         self.state.set_is_running(true);
         Ok(())
