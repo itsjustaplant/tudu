@@ -53,24 +53,20 @@ impl View {
 
         let message = if state.get_is_first_time() {
             format!(
-            "
-              Hello there 👋, let's set a master key with numbers that is 10 char max and promise you will never forget!
+            "Hello there 👋, let's set a master key with numbers \nthat is 10 char max and promise you will never forget!
               {}
             ",
             String::from("*").repeat(state.master_key.len())
             )
         } else {
             format!(
-                "
-              Hello there 👋, enter your master key please
-              {}
-            ",
+                "Hello there 👋, enter your master key please\n{}",
                 String::from("*").repeat(state.master_key.len())
             )
         };
         let widget = Paragraph::new(message)
             .alignment(Alignment::Left)
-            .block(Block::default().borders(Borders::NONE));
+            .block(Block::default().borders(Borders::ALL).title("tudu"));
 
         frame.render_widget(widget, outer_layout[0]);
         View::draw_legend(frame, "esc: Cancel, enter: Enter", inner_layout[0]);
@@ -128,7 +124,7 @@ impl View {
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title("Write the task, max 80 characters"),
+                    .title("Write the task, max 40 characters"),
             );
 
         frame.render_widget(input_field, outer_layout[0]);
