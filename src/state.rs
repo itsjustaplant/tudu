@@ -89,45 +89,44 @@ impl State {
 
 #[cfg(test)]
 mod tests {
-  use super::*;
+    use super::*;
 
-  #[test]
-  fn setter_getter_test() {
-    let mut state = State::new();
-    let error = String::from("error");
-    let input = "input";
-    let line = 0;
-    let screen = Screen::Greetings;
-    let is_running = true;
-    let task = Task {
-      id: 0,
-      title: String::from("title"),
-      status: String::from("in-progress")
-    };
-    let task_list = vec![task];
-    let is_first_time = true;
-    let master_key = String::from("master_key");
+    #[test]
+    fn setter_getter_test() {
+        let mut state = State::new();
+        let error = String::from("error");
+        let input = "input";
+        let line = 0;
+        let screen = Screen::Greetings;
+        let is_running = true;
+        let task = Task {
+            id: 0,
+            title: String::from("title"),
+            status: String::from("in-progress"),
+        };
+        let task_list = vec![task];
+        let is_first_time = true;
+        let master_key = String::from("master_key");
 
+        // setters
+        state.set_error(error.clone());
+        state.set_input(input);
+        state.set_line(line);
+        state.set_screen(Screen::Greetings);
+        state.set_is_running(is_running);
+        state.set_task_list(task_list.clone());
+        state.set_is_first_time(is_first_time);
+        state.set_master_key(master_key.clone());
 
-    // setters
-    state.set_error(error.clone());
-    state.set_input(input);
-    state.set_line(line);
-    state.set_screen(Screen::Greetings);
-    state.set_is_running(is_running);
-    state.set_task_list(task_list.clone());
-    state.set_is_first_time(is_first_time);
-    state.set_master_key(master_key.clone());
-
-    //getters
-    assert_eq!(state.get_error(), &error);
-    assert_eq!(state.get_input(), input);
-    assert_eq!(state.get_line(), line);
-    assert_eq!(state.get_screen(), &screen);
-    assert_eq!(state.get_is_running(), is_running);
-    assert_eq!(state.get_task_list(), &task_list);
-    assert_eq!(state.get_task_list_length(), task_list.len() as i32);
-    assert_eq!(state.get_is_first_time(), is_first_time);
-    assert_eq!(state.get_master_key(), &master_key);
-  }
+        //getters
+        assert_eq!(state.get_error(), &error);
+        assert_eq!(state.get_input(), input);
+        assert_eq!(state.get_line(), line);
+        assert_eq!(state.get_screen(), &screen);
+        assert_eq!(state.get_is_running(), is_running);
+        assert_eq!(state.get_task_list(), &task_list);
+        assert_eq!(state.get_task_list_length(), task_list.len() as i32);
+        assert_eq!(state.get_is_first_time(), is_first_time);
+        assert_eq!(state.get_master_key(), &master_key);
+    }
 }
