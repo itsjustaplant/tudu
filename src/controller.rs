@@ -4,7 +4,7 @@ use ratatui::prelude::{Backend, Terminal};
 use crate::client::Client;
 use crate::constants::{self, Action, Screen, MAX_TASK_TITLE_LENGTH, VERY_SECRET_TEXT};
 use crate::encdec::{decrypt, encrypt};
-use crate::filesystem;
+use crate::filesystem::{self, get_app_config_path};
 use crate::state::State;
 use crate::view::View;
 
@@ -211,12 +211,13 @@ impl Controller {
 
     pub fn init_controller(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let is_first_time = !filesystem::db_exists();
+        let app_config_path = get_app_config_path()?;
 
         self.state.set_is_first_time(is_first_time);
 
         filesystem::create_config_folder()?;
         self.handle_action(Action::OpenGreetingsScreen);
-        self.client.open_connection()?;
+        self.client.open_connection(app_config_path)?;
         self.client.create_user_table()?;
         self.client.crete_todos_table()?;
         self.state.set_is_running(true);
