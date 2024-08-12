@@ -60,6 +60,7 @@ impl Client {
                 let result = c.execute(query, []);
                 match result {
                     Ok(r) => Ok(r),
+                    // How do i test here
                     Err(e) => Err(Error::new(
                         ErrorKind::Other,
                         format!("Could not create todos table, e: {}", e),
@@ -196,7 +197,6 @@ mod tests {
             .expect("Could not create user table");
 
         let mut tasks = client.get_tasks().expect("Could not get tasks");
-        let users = client.get_user().expect("Could not get user");
 
         assert_eq!(tasks.len(), 0);
 
@@ -204,6 +204,7 @@ mod tests {
         client.create_user(secret).expect("Could not create user");
 
         tasks = client.get_tasks().expect("Could not get tasks");
+        let users = client.get_user().expect("Could not get user");
 
         assert_eq!(tasks.len(), 1);
         assert_eq!(users.len(), 1);
@@ -215,6 +216,14 @@ mod tests {
         let task = tasks.get(0).expect("Could not get task 0");
 
         assert_eq!(task.status, "completed");
+
+        client
+            .update_task(1, "completed")
+            .expect("Could not update task");
+        tasks = client.get_tasks().expect("Could not get tasks");
+        let task = tasks.get(0).expect("Could not get task 0");
+
+        assert_eq!(task.status, "in-progress");
 
         client.remove_task(1).expect("Could not remove connection");
         client
@@ -245,16 +254,18 @@ mod tests {
     // TODO: change the get_connection logic so that we can test if it is error or not
     // TODO: replace String params with &str so we can reuse those values
     #[test]
-    #[should_panic]
     fn test_todos_table_creation_error() {
         let client = Client::default();
-        let _ = client.crete_todos_table();
+        let result = client.crete_todos_table();
+
+        assert!(result.is_err());
     }
 
     #[test]
-    #[should_panic]
     fn test_user_table_creation_error() {
         let client = Client::default();
-        let _ = client.create_user_table();
+        let result = client.create_user_table();
+
+        assert!(result.is_err());
     }
 }
