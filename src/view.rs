@@ -53,8 +53,7 @@ impl View {
 
         let message = if state.get_is_first_time() {
             format!(
-            "Hello there 👋, let's set a master key with numbers \nthat is 10 char max and promise you will never forget!
-              {}
+            "Hello there 👋, let's set a master key with numbers \nthat is 10 char max and promise you will never forget!\n{}
             ",
             String::from("*").repeat(state.master_key.len())
             )
