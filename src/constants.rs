@@ -1,7 +1,7 @@
 pub const APP_PATH: &str = "tudu";
 pub const DB_NAME: &str = "tudu.db";
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub enum Screen {
     #[default]
     Main,
