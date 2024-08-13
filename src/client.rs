@@ -184,7 +184,7 @@ mod tests {
         let title = String::from("Test client module");
         let secret = String::from("SECRET");
 
-        path.push("./test");
+        path.push("./test/client/");
 
         client
             .open_connection(path)
