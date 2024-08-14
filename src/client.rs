@@ -170,6 +170,12 @@ impl Client {
             .execute("UPDATE todos SET status=?1 WHERE id=?2", (new_status, id))
             .map_err(|e| Error::new(ErrorKind::Other, format!("Could not update task, e: {}", e)))
     }
+
+    pub fn remove_user(&self) -> Result<usize, Error> {
+      self.get_connection()?
+            .execute("DELETE FROM user", [])
+            .map_err(|e| Error::new(ErrorKind::Other, format!("Could not remove user, e: {}", e)))
+    }
 }
 
 #[cfg(test)]
@@ -226,6 +232,7 @@ mod tests {
         assert_eq!(task.status, "in-progress");
 
         client.remove_task(1).expect("Could not remove connection");
+        client.remove_user().expect("Could not remove user");
         client
             .close_connection()
             .expect("Could not close connection");
