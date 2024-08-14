@@ -23,7 +23,11 @@ impl Controller {
 
     pub fn handle_action(&mut self, action: Action) {
         match action {
-            Action::Exit => self.state.set_is_running(false),
+            Action::Init => self.state.set_is_running(true),
+            Action::Exit => {
+              self.state.set_is_running(false);
+              self.exit().expect("Could not exit");
+            },
             Action::GetTasks => {
                 match self.client.get_tasks() {
                     Ok(mut task_list) => {
@@ -220,7 +224,7 @@ impl Controller {
         self.client.open_connection(app_config_path)?;
         self.client.create_user_table()?;
         self.client.crete_todos_table()?;
-        self.state.set_is_running(true);
+        self.handle_action(Action::Init);
         Ok(())
     }
 
@@ -240,5 +244,102 @@ impl Controller {
             View::draw(terminal, &self.state)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_action_handler() {
+        let mut path = PathBuf::new();
+        path.push("./test/controller/");
+
+        let mut controller = Controller::new();
+        assert_eq!(controller.state.get_is_running(), false);
+
+        controller
+            .client
+            .open_connection(path)
+            .expect("Could not open connection");
+
+        // Greetings
+        controller.handle_action(Action::OpenGreetingsScreen);
+        assert_eq!(controller.state.get_screen(), &Screen::Greetings);  
+
+        controller.handle_action(Action::InputMaskedChar('S'));
+        controller.handle_action(Action::InputMaskedChar('E'));
+        controller.handle_action(Action::InputMaskedChar('C'));
+        controller.handle_action(Action::InputMaskedChar('R'));
+        controller.handle_action(Action::InputMaskedChar('E'));
+        controller.handle_action(Action::InputMaskedChar('T'));
+        controller.handle_action(Action::InputMaskedChar('T'));
+        assert_eq!(controller.state.get_master_key(), &String::from("SECRETT"));
+
+        controller.handle_action(Action::RemoveMaskedChar);
+        assert_eq!(controller.state.get_master_key(), &String::from("SECRET"));
+
+        // Add secret
+        controller.state.set_master_key(String::from("SECRET"));
+        controller.handle_action(Action::OpenMainScreen);
+        controller.handle_action(Action::Init);
+        assert_eq!(controller.state.get_is_running(), true);
+
+        // No item
+        controller.handle_action(Action::MenuDown);
+        assert_eq!(controller.state.get_line(), 0);
+
+        controller.handle_action(Action::GetTasks);
+        let tasks = controller.state.get_task_list();
+        assert_eq!(tasks.len(), 0);
+
+        controller.handle_action(Action::AddTask);
+        assert_eq!(controller.state.get_error(), "Please enter task title");
+
+        // 2 item
+        controller.handle_action(Action::InputChar('c'));
+        controller.handle_action(Action::AddTask);
+        controller.handle_action(Action::InputChar('c'));
+        controller.handle_action(Action::AddTask);
+        controller.handle_action(Action::GetTasks);
+        controller.handle_action(Action::MenuDown);
+        assert_eq!(controller.state.get_line(), 1);
+        controller.handle_action(Action::MenuUp);
+        assert_eq!(controller.state.get_line(), 0);
+        controller.handle_action(Action::ToggleTaskStatus);
+        assert_eq!(controller.state.get_task_list().get(0).expect("nope").status, "completed");
+
+        // Check remove char
+        controller.handle_action(Action::InputChar('c'));
+        controller.handle_action(Action::RemoveChar);
+        assert_eq!(controller.state.get_input(), &String::from(""));
+
+        // Check task title length
+        for _ in 0..41 {
+          controller.handle_action(Action::InputChar('c'));
+        }
+        controller.handle_action(Action::AddTask);
+        assert_eq!(controller.state.get_error(), &String::from("Task title cannot be longer than 40"));
+
+        // Remote all items
+        controller.handle_action(Action::RemoveTask);
+        controller.handle_action(Action::RemoveTask);
+        assert_eq!(controller.state.get_line(), 0);
+
+        // Add task
+        controller.state.set_error(String::from("ERROR"));
+        controller.handle_action(Action::OpenAddScreen);
+        assert_eq!(controller.state.get_screen(), &Screen::Add);
+        assert_eq!(controller.state.get_error(), &String::from(""));
+
+        // Cancel add task
+        controller.handle_action(Action::CancelAddTask);
+        assert_eq!(controller.state.get_screen(), &Screen::Main);
+
+        controller.client.remove_user().expect("Could not remove user");
+        controller.handle_action(Action::Empty);
+        controller.handle_action(Action::Exit);
     }
 }
