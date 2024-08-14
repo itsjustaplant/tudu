@@ -10,6 +10,7 @@ pub enum Screen {
 }
 
 pub enum Action {
+    Init,
     Empty,
     Exit,
     GetTasks,
