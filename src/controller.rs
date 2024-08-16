@@ -171,42 +171,46 @@ impl Controller {
         }
     }
 
+    pub fn handle_key_stroke(&self, key_code: KeyCode) -> Action{
+      return match self.state.get_screen() {
+        Screen::Main => match key_code {
+            KeyCode::Char('a') => Action::OpenAddScreen,
+            KeyCode::Char('x') => Action::RemoveTask,
+            KeyCode::Up => Action::MenuUp,
+            KeyCode::Down => Action::MenuDown,
+            KeyCode::Esc => Action::Exit,
+            KeyCode::Enter => Action::ToggleTaskStatus,
+            _ => Action::Empty,
+        },
+        Screen::Add => match key_code {
+            KeyCode::Esc => Action::CancelAddTask,
+            KeyCode::Enter => Action::AddTask,
+            KeyCode::Char(to_insert) => Action::InputChar(to_insert),
+            KeyCode::Backspace => Action::RemoveChar,
+            _ => Action::Empty,
+        },
+        Screen::Greetings => match key_code {
+            KeyCode::Esc => Action::Exit,
+            KeyCode::Char(to_insert) => Action::InputMaskedChar(to_insert),
+            KeyCode::Backspace => Action::RemoveMaskedChar,
+            KeyCode::Enter => {
+                if self.state.get_is_first_time() {
+                    Action::AddSecret
+                } else {
+                    Action::OpenMainScreen
+                }
+            }
+            _ => Action::Empty,
+        },
+    };
+    }
+
     pub fn handle_events(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         if event::poll(std::time::Duration::from_millis(16))? {
             if let event::Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
-                    let action = match self.state.get_screen() {
-                        Screen::Main => match key.code {
-                            KeyCode::Char('a') => Action::OpenAddScreen,
-                            KeyCode::Char('x') => Action::RemoveTask,
-                            KeyCode::Up => Action::MenuUp,
-                            KeyCode::Down => Action::MenuDown,
-                            KeyCode::Esc => Action::Exit,
-                            KeyCode::Enter => Action::ToggleTaskStatus,
-                            _ => Action::Empty,
-                        },
-                        Screen::Add => match key.code {
-                            KeyCode::Esc => Action::CancelAddTask,
-                            KeyCode::Enter => Action::AddTask,
-                            KeyCode::Char(to_insert) => Action::InputChar(to_insert),
-                            KeyCode::Backspace => Action::RemoveChar,
-                            _ => Action::Empty,
-                        },
-                        Screen::Greetings => match key.code {
-                            KeyCode::Esc => Action::Exit,
-                            KeyCode::Char(to_insert) => Action::InputMaskedChar(to_insert),
-                            KeyCode::Backspace => Action::RemoveMaskedChar,
-                            KeyCode::Enter => {
-                                if self.state.get_is_first_time() {
-                                    Action::AddSecret
-                                } else {
-                                    Action::OpenMainScreen
-                                }
-                            }
-                            _ => Action::Empty,
-                        },
-                    };
-                    self.handle_action(action);
+                  let action = self.handle_key_stroke(key.code);
+                  self.handle_action(action);
                 }
             }
         }
@@ -341,5 +345,52 @@ mod tests {
         controller.client.remove_user().expect("Could not remove user");
         controller.handle_action(Action::Empty);
         controller.handle_action(Action::Exit);
+    }
+
+    #[test]
+    fn test_key_stroke_handler() {
+      let mut controller = Controller::new();
+
+      // Main screen
+      let mut action = controller.handle_key_stroke(KeyCode::Char('a'));
+      assert_eq!(action, Action::OpenAddScreen);
+      action = controller.handle_key_stroke(KeyCode::Char('x'));
+      assert_eq!(action, Action::RemoveTask);
+      action = controller.handle_key_stroke(KeyCode::Up);
+      assert_eq!(action, Action::MenuUp);
+      action = controller.handle_key_stroke(KeyCode::Down);
+      assert_eq!(action, Action::MenuDown);
+      action = controller.handle_key_stroke(KeyCode::Esc);
+      assert_eq!(action, Action::Exit);
+      action = controller.handle_key_stroke(KeyCode::Enter);
+      assert_eq!(action, Action::ToggleTaskStatus);
+      action = controller.handle_key_stroke(KeyCode::Char('z'));
+      assert_eq!(action, Action::Empty);
+
+      // Add screen
+      controller.handle_action(Action::OpenAddScreen);
+      action = controller.handle_key_stroke(KeyCode::Esc);
+      assert_eq!(action, Action::CancelAddTask);
+      action = controller.handle_key_stroke(KeyCode::Enter);
+      assert_eq!(action, Action::AddTask);
+      action = controller.handle_key_stroke(KeyCode::Char('s'));
+      assert_eq!(action, Action::InputChar('s'));
+      action = controller.handle_key_stroke(KeyCode::Backspace);
+      assert_eq!(action, Action::RemoveChar);
+
+      // Greetings screen
+      controller.handle_action(Action::OpenGreetingsScreen);
+      action = controller.handle_key_stroke(KeyCode::Esc);
+      assert_eq!(action, Action::Exit);
+      action = controller.handle_key_stroke(KeyCode::Char('s'));
+      assert_eq!(action, Action::InputMaskedChar('s'));
+      action = controller.handle_key_stroke(KeyCode::Backspace);
+      assert_eq!(action, Action::RemoveMaskedChar);
+      action = controller.handle_key_stroke(KeyCode::Enter);
+      assert_eq!(action, Action::OpenMainScreen);
+
+      controller.state.set_is_first_time(true);
+      action = controller.handle_key_stroke(KeyCode::Enter);
+      assert_eq!(action, Action::AddSecret);
     }
 }
