@@ -9,6 +9,7 @@ pub enum Screen {
     Greetings,
 }
 
+#[derive(Debug, PartialEq)]
 pub enum Action {
     Init,
     Empty,
