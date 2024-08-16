@@ -172,7 +172,7 @@ impl Client {
     }
 
     pub fn remove_user(&self) -> Result<usize, Error> {
-      self.get_connection()?
+        self.get_connection()?
             .execute("DELETE FROM user", [])
             .map_err(|e| Error::new(ErrorKind::Other, format!("Could not remove user, e: {}", e)))
     }
