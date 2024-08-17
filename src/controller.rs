@@ -353,6 +353,19 @@ mod tests {
         controller.handle_action(Action::CancelAddTask);
         assert_eq!(controller.state.get_screen(), &Screen::Main);
 
+        controller.state.set_error(String::from(""));
+        controller.state.set_master_key(String::from("MASTER_KEY"));
+        controller.handle_action(Action::AddSecret);
+        assert_eq!(controller.state.get_screen(), &Screen::Main);
+        assert_eq!(controller.state.get_error(), &String::from(""));
+
+        controller.state.set_master_key(String::from(""));
+        controller.handle_action(Action::AddSecret);
+        assert_eq!(
+            controller.state.get_error(),
+            &String::from("Password is wrong")
+        );
+
         controller
             .client
             .remove_user()
@@ -425,5 +438,13 @@ mod tests {
 
         controller.handle_action(Action::CheckSecret);
         assert_eq!(controller.state.get_error(), "Could not get user");
+    }
+
+    #[test]
+    fn test_handle_key_events() {
+        let mut controller = Controller::new();
+
+        let result = controller.handle_events();
+        assert!(result.is_ok());
     }
 }
