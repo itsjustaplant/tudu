@@ -46,4 +46,19 @@ mod tests {
         assert_eq!(correct_result, true);
         assert_eq!(wrong_result, false);
     }
+
+    #[test]
+    fn test_config_path() {
+        let app_config_path = get_app_config_path();
+        assert!(app_config_path.is_ok());
+    }
+
+    #[test]
+    fn test_return_ok_if_folder_exist() {
+        let mut path = PathBuf::new();
+        path.push("./test/filesystem/");
+
+        let result = create_config_folder(&path);
+        assert!(result.is_ok());
+    }
 }
