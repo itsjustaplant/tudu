@@ -218,12 +218,12 @@ impl Controller {
     }
 
     pub fn init_controller(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let is_first_time = !filesystem::db_exists();
         let app_config_path = get_app_config_path()?;
+        let is_first_time = !filesystem::db_file_exists(&app_config_path, constants::DB_NAME);
 
         self.state.set_is_first_time(is_first_time);
 
-        filesystem::create_config_folder()?;
+        filesystem::create_config_folder(&app_config_path)?;
         self.handle_action(Action::OpenGreetingsScreen);
         self.client.open_connection(app_config_path)?;
         self.client.create_user_table()?;
