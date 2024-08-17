@@ -391,6 +391,8 @@ mod tests {
         assert_eq!(action, Action::InputChar('s'));
         action = controller.handle_key_stroke(KeyCode::Backspace);
         assert_eq!(action, Action::RemoveChar);
+        action = controller.handle_key_stroke(KeyCode::Home);
+        assert_eq!(action, Action::Empty);
 
         // Greetings screen
         controller.handle_action(Action::OpenGreetingsScreen);
@@ -402,9 +404,26 @@ mod tests {
         assert_eq!(action, Action::RemoveMaskedChar);
         action = controller.handle_key_stroke(KeyCode::Enter);
         assert_eq!(action, Action::OpenMainScreen);
+        action = controller.handle_key_stroke(KeyCode::Home);
+        assert_eq!(action, Action::Empty);
 
         controller.state.set_is_first_time(true);
         action = controller.handle_key_stroke(KeyCode::Enter);
         assert_eq!(action, Action::AddSecret);
+    }
+
+    #[test]
+    fn test_common_error_tests() {
+        let mut controller = Controller::new();
+
+        controller.handle_action(Action::GetTasks);
+        assert_ne!(controller.state.get_error(), "");
+
+        controller.state.set_input("TEST TASK TITLE");
+        controller.handle_action(Action::AddTask);
+        assert_ne!(controller.state.get_error(), "");
+
+        controller.handle_action(Action::CheckSecret);
+        assert_eq!(controller.state.get_error(), "Could not get user");
     }
 }
