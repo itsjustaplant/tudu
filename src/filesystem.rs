@@ -30,3 +30,20 @@ pub fn db_file_exists(app_config_path: &PathBuf, db_name: &str) -> bool {
     let absolute_path = app_config_path.join(db_name);
     fs::metadata(&absolute_path).is_ok()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_db_file_exists() {
+        let mut path = PathBuf::new();
+        path.push("./test/filesystem/");
+
+        let correct_result = db_file_exists(&path, "tudu.db");
+        let wrong_result = db_file_exists(&path, "tudu1.db");
+
+        assert_eq!(correct_result, true);
+        assert_eq!(wrong_result, false);
+    }
+}
