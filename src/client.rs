@@ -3,7 +3,6 @@ use std::path::PathBuf;
 
 use rusqlite::{Connection, Result};
 
-use crate::constants;
 use crate::task::Task;
 use crate::user::User;
 
@@ -23,8 +22,8 @@ impl Client {
         }
     }
 
-    pub fn open_connection(&mut self, mut app_config_path: PathBuf) -> Result<(), Error> {
-        app_config_path.push(constants::DB_NAME);
+    pub fn open_connection(&mut self, mut app_config_path: PathBuf, db_name: &str) -> Result<(), Error> {
+        app_config_path.push(db_name);
 
         match Connection::open(app_config_path) {
             Ok(connection) => {
@@ -180,6 +179,8 @@ impl Client {
 
 #[cfg(test)]
 mod tests {
+    use crate::constants::{self, DB_NAME};
+
     use super::*;
 
     #[test]
@@ -193,7 +194,7 @@ mod tests {
         path.push("./test/client/");
 
         client
-            .open_connection(path)
+            .open_connection(path, constants::DB_NAME)
             .expect("Could not open connection");
         client
             .crete_todos_table()
@@ -244,8 +245,7 @@ mod tests {
         let mut path = PathBuf::new();
 
         path.push("./bad_test_path");
-        let result = client.open_connection(path);
-
+        let result = client.open_connection(path, DB_NAME);
         assert!(result.is_err());
     }
 
@@ -254,25 +254,34 @@ mod tests {
         let mut client = Client::default();
 
         let result = client.close_connection();
-
         assert!(result.is_err());
     }
 
-    // TODO: change the get_connection logic so that we can test if it is error or not
-    // TODO: replace String params with &str so we can reuse those values
     #[test]
     fn test_todos_table_creation_error() {
-        let client = Client::default();
-        let result = client.crete_todos_table();
+        let mut client = Client::default();
+        let mut path = PathBuf::new();
+        
+        let mut result = client.crete_todos_table();
+        assert!(result.is_err());
 
+        path.push("./test/bad_db/");
+        client.open_connection(path, "tudu.txt").expect("Could not create connection");
+        result = client.crete_todos_table();
         assert!(result.is_err());
     }
 
     #[test]
     fn test_user_table_creation_error() {
-        let client = Client::default();
-        let result = client.create_user_table();
+        let mut client = Client::default();
+        let mut path = PathBuf::new();
+        let mut result = client.create_user_table();
 
+        assert!(result.is_err());
+
+        path.push("./test/bad_db/");
+        client.open_connection(path, "tudu.txt").expect("Could not create connection");
+        result = client.create_user_table();
         assert!(result.is_err());
     }
 }
