@@ -46,7 +46,7 @@ impl Client {
         }
     }
 
-    pub fn crete_todos_table(&self) -> Result<usize, Error> {
+    pub fn create_todos_table(&self) -> Result<usize, Error> {
         let query = "CREATE TABLE IF NOT EXISTS todos (
                      id INTEGER NOT NULL PRIMARY KEY,
                      title TEXT,
@@ -197,7 +197,7 @@ mod tests {
             .open_connection(path, constants::DB_NAME)
             .expect("Could not open connection");
         client
-            .crete_todos_table()
+            .create_todos_table()
             .expect("Could not create todos table");
         client
             .create_user_table()
@@ -262,12 +262,12 @@ mod tests {
         let mut client = Client::default();
         let mut path = PathBuf::new();
         
-        let mut result = client.crete_todos_table();
+        let mut result = client.create_todos_table();
         assert!(result.is_err());
 
         path.push("./test/bad_db/");
         client.open_connection(path, "tudu.txt").expect("Could not create connection");
-        result = client.crete_todos_table();
+        result = client.create_todos_table();
         assert!(result.is_err());
     }
 

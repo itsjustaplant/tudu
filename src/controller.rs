@@ -227,7 +227,7 @@ impl Controller {
         self.handle_action(Action::OpenGreetingsScreen);
         self.client.open_connection(app_config_path, constants::DB_NAME)?;
         self.client.create_user_table()?;
-        self.client.crete_todos_table()?;
+        self.client.create_todos_table()?;
         self.handle_action(Action::Init);
         Ok(())
     }
