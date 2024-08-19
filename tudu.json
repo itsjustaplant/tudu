@@ -1,13 +1,13 @@
 {
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "tudu - A simple todo app.",
 	"homepage": "https://github.com/itsjustaplant/tudu",
 	"license": "MIT",
 	"bin": "tudu.exe",
 	"architecture": {
 		"64bit": {
-			"url": "https://github.com/itsjustaplant/tudu/releases/download/v1.0.0/tudu.zip",
-			"hash": "7DCD88AA4D4E7605EBA801FB04FA6D812F795CBC298A1EB07DE23F7E7DFFFCEF"
+			"url": "https://github.com/itsjustaplant/tudu/releases/download/v0.2.0/tudu.zip",
+			"hash": "530FC0FECD542F4ABA177817A297A1415854D833F520CFCC251E3B5A11FE1F80"
 		}
 	}
 }
