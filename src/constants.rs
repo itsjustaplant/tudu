@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 pub const APP_PATH: &str = "tudu";
 pub const DB_NAME: &str = "tudu.db";
 pub const CSV_NAME: &str = "tudu.csv";
@@ -32,7 +34,7 @@ pub enum Action {
     ResetError,
     AddSecret,
     CheckSecret,
-    ExportCSV
+    ExportCSV(PathBuf)
 }
 
 pub const MAX_TASK_TITLE_LENGTH: i32 = 40;

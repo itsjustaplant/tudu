@@ -26,8 +26,8 @@ pub fn create_config_folder(app_config_path: &PathBuf) -> Result<(), Error> {
     }
 }
 
-pub fn file_exists(app_config_path: &PathBuf, db_name: &str) -> bool {
-    let absolute_path = app_config_path.join(db_name);
+pub fn file_exists(app_config_path: &PathBuf, file_name: &str) -> bool {
+    let absolute_path = app_config_path.join(file_name);
     fs::metadata(&absolute_path).is_ok()
 }
 

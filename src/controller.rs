@@ -168,34 +168,39 @@ impl Controller {
             Action::ResetError => {
                 self.state.set_error(String::from(""));
             }
-            Action::ExportCSV => {
-              let app_config_path = get_app_config_path();
-
-              match app_config_path {
-                  Ok(mut acp) => {
-                    self.handle_action(Action::GetTasks);
+            Action::ExportCSV(app_config_path) => {
+              self.handle_action(Action::GetTasks);
                     let task_list = self.state.get_task_list();
-                    acp.push(constants::CSV_NAME);
+                    let acp = app_config_path.join(constants::CSV_NAME);
                     let write_result = write_tasks_into_csv_file(task_list, &acp);
 
                     match write_result {
                         Ok(_) => self.state.set_error(String::from("Successfully save csv file")),
                         Err(_) => self.state.set_error(String::from("Could not save csv file"))
                     }
-                  },
-                  Err(_) => self.state.set_error(String::from("Could not get config path"))
-              }
             }
             Action::Empty => {}
         }
     }
 
-    pub fn handle_key_stroke(&self, key_code: KeyCode) -> Action {
+    pub fn handle_key_stroke(&mut self, key_code: KeyCode) -> Action {
         return match self.state.get_screen() {
             Screen::Main => match key_code {
                 KeyCode::Char('a') => Action::OpenAddScreen,
                 KeyCode::Char('x') => Action::RemoveTask,
-                KeyCode::Char('e') => Action::ExportCSV,
+                // in order to test it
+                KeyCode::Char('e') => {
+                  let app_config_path = get_app_config_path();
+                  match app_config_path {
+                      Ok(acp) => {
+                        Action::ExportCSV(acp)
+                      },
+                      Err(_) => {
+                        self.state.set_error(String::from("Could not save csv file"));
+                        Action::Empty
+                      }
+                  }
+                },
                 KeyCode::Up => Action::MenuUp,
                 KeyCode::Down => Action::MenuDown,
                 KeyCode::Esc => Action::Exit,
@@ -273,6 +278,8 @@ impl Controller {
 
 #[cfg(test)]
 mod tests {
+    use filesystem::file_exists;
+
     use super::*;
     use std::path::PathBuf;
 
@@ -342,6 +349,12 @@ mod tests {
                 .status,
             "completed"
         );
+
+        let mut csv_path = PathBuf::new();
+        csv_path.push("./test/csv/");
+        controller.handle_action(Action::ExportCSV(csv_path.clone()));
+        let csv_file_exist = file_exists(&csv_path, constants::CSV_NAME);
+        assert_eq!(csv_file_exist, true);
 
         // Check remove char
         controller.handle_action(Action::InputChar('c'));
