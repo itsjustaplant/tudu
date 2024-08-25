@@ -105,7 +105,7 @@ impl View {
 
         View::draw_legend(
             frame,
-            "esc: Exit, a: Add, x: Remove, enter: Check/Uncheck, ↑: Up, ↓: Down",
+            "esc: Exit, a: Add, x: Remove, enter: Check/Uncheck, ↑: Up, ↓: Down e: Export",
             inner_layout[0],
         );
         View::draw_error(frame, &state, inner_layout[1]);
