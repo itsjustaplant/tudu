@@ -239,7 +239,7 @@ impl Controller {
 
     pub fn init_controller(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let app_config_path = get_app_config_path()?;
-        let is_first_time = !filesystem::db_file_exists(&app_config_path, constants::DB_NAME);
+        let is_first_time = !filesystem::file_exists(&app_config_path, constants::DB_NAME);
 
         self.state.set_is_first_time(is_first_time);
 
