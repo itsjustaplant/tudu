@@ -20,3 +20,25 @@ pub fn write_tasks_into_csv_file(task_list: &Vec<Task>, path: &PathBuf) -> Resul
   writer.flush()?;
   Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_write_file() {
+    let task = Task {
+      id: 0,
+      title: String::from("Title"),
+      status: String::from("completed")
+    };
+
+    let task_list = vec![task];
+
+    let mut path = PathBuf::new();
+    path.push("./test/csv/tudu.csv");
+
+    let result = write_tasks_into_csv_file(&task_list, &path);
+    assert!(result.is_ok());
+  }
+}
