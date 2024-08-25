@@ -91,7 +91,10 @@ impl View {
                 };
                 let content = format!(" [{}] {} :: {}", checkbox, e.1.title, e.1.status);
                 if e.0 as i32 == selected_line {
-                    Span::styled(content, Style::default().bg(Color::LightYellow).fg(Color::Black))
+                    Span::styled(
+                        content,
+                        Style::default().bg(Color::LightYellow).fg(Color::Black),
+                    )
                 } else {
                     Span::raw(content)
                 }

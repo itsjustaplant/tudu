@@ -34,7 +34,7 @@ pub enum Action {
     ResetError,
     AddSecret,
     CheckSecret,
-    ExportCSV(PathBuf)
+    ExportCSV(PathBuf),
 }
 
 pub const MAX_TASK_TITLE_LENGTH: i32 = 40;

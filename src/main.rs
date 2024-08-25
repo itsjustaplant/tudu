@@ -1,13 +1,13 @@
 pub mod client;
 pub mod constants;
 pub mod controller;
+pub mod csv;
 pub mod encdec;
 pub mod filesystem;
 pub mod state;
 pub mod task;
 pub mod user;
 pub mod view;
-pub mod csv;
 
 use std::io::stdout;
 

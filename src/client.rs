@@ -22,7 +22,11 @@ impl Client {
         }
     }
 
-    pub fn open_connection(&mut self, mut app_config_path: PathBuf, db_name: &str) -> Result<(), Error> {
+    pub fn open_connection(
+        &mut self,
+        mut app_config_path: PathBuf,
+        db_name: &str,
+    ) -> Result<(), Error> {
         app_config_path.push(db_name);
 
         match Connection::open(app_config_path) {
@@ -261,12 +265,14 @@ mod tests {
     fn test_todos_table_creation_error() {
         let mut client = Client::default();
         let mut path = PathBuf::new();
-        
+
         let mut result = client.create_todos_table();
         assert!(result.is_err());
 
         path.push("./test/bad_db/");
-        client.open_connection(path, "tudu.txt").expect("Could not create connection");
+        client
+            .open_connection(path, "tudu.txt")
+            .expect("Could not create connection");
         result = client.create_todos_table();
         assert!(result.is_err());
     }
@@ -280,7 +286,9 @@ mod tests {
         assert!(result.is_err());
 
         path.push("./test/bad_db/");
-        client.open_connection(path, "tudu.txt").expect("Could not create connection");
+        client
+            .open_connection(path, "tudu.txt")
+            .expect("Could not create connection");
         result = client.create_user_table();
         assert!(result.is_err());
     }

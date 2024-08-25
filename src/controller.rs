@@ -3,11 +3,11 @@ use ratatui::prelude::{Backend, Terminal};
 
 use crate::client::Client;
 use crate::constants::{self, Action, Screen, MAX_TASK_TITLE_LENGTH, VERY_SECRET_TEXT};
+use crate::csv::write_tasks_into_csv_file;
 use crate::encdec::{decrypt, encrypt};
 use crate::filesystem::{self, get_app_config_path};
 use crate::state::State;
 use crate::view::View;
-use crate::csv::write_tasks_into_csv_file;
 
 pub struct Controller {
     pub state: State,
@@ -169,15 +169,19 @@ impl Controller {
                 self.state.set_error(String::from(""));
             }
             Action::ExportCSV(app_config_path) => {
-              self.handle_action(Action::GetTasks);
-                    let task_list = self.state.get_task_list();
-                    let acp = app_config_path.join(constants::CSV_NAME);
-                    let write_result = write_tasks_into_csv_file(task_list, &acp);
+                self.handle_action(Action::GetTasks);
+                let task_list = self.state.get_task_list();
+                let acp = app_config_path.join(constants::CSV_NAME);
+                let write_result = write_tasks_into_csv_file(task_list, &acp);
 
-                    match write_result {
-                        Ok(_) => self.state.set_error(String::from("Successfully save csv file")),
-                        Err(_) => self.state.set_error(String::from("Could not save csv file"))
-                    }
+                match write_result {
+                    Ok(_) => self
+                        .state
+                        .set_error(String::from("Successfully save csv file")),
+                    Err(_) => self
+                        .state
+                        .set_error(String::from("Could not save csv file")),
+                }
             }
             Action::Empty => {}
         }
@@ -190,17 +194,16 @@ impl Controller {
                 KeyCode::Char('x') => Action::RemoveTask,
                 // in order to test it
                 KeyCode::Char('e') => {
-                  let app_config_path = get_app_config_path();
-                  match app_config_path {
-                      Ok(acp) => {
-                        Action::ExportCSV(acp)
-                      },
-                      Err(_) => {
-                        self.state.set_error(String::from("Could not save csv file"));
-                        Action::Empty
-                      }
-                  }
-                },
+                    let app_config_path = get_app_config_path();
+                    match app_config_path {
+                        Ok(acp) => Action::ExportCSV(acp),
+                        Err(_) => {
+                            self.state
+                                .set_error(String::from("Could not save csv file"));
+                            Action::Empty
+                        }
+                    }
+                }
                 KeyCode::Up => Action::MenuUp,
                 KeyCode::Down => Action::MenuDown,
                 KeyCode::Esc => Action::Exit,
@@ -250,7 +253,8 @@ impl Controller {
 
         filesystem::create_config_folder(&app_config_path)?;
         self.handle_action(Action::OpenGreetingsScreen);
-        self.client.open_connection(app_config_path, constants::DB_NAME)?;
+        self.client
+            .open_connection(app_config_path, constants::DB_NAME)?;
         self.client.create_user_table()?;
         self.client.create_todos_table()?;
         self.handle_action(Action::Init);
