@@ -7,6 +7,7 @@ use crate::encdec::{decrypt, encrypt};
 use crate::filesystem::{self, get_app_config_path};
 use crate::state::State;
 use crate::view::View;
+use crate::csv::write_tasks_into_csv_file;
 
 pub struct Controller {
     pub state: State,
@@ -167,6 +168,24 @@ impl Controller {
             Action::ResetError => {
                 self.state.set_error(String::from(""));
             }
+            Action::ExportCSV => {
+              let app_config_path = get_app_config_path();
+
+              match app_config_path {
+                  Ok(mut acp) => {
+                    self.handle_action(Action::GetTasks);
+                    let task_list = self.state.get_task_list();
+                    acp.push(constants::CSV_NAME);
+                    let write_result = write_tasks_into_csv_file(task_list, &acp);
+
+                    match write_result {
+                        Ok(_) => self.state.set_error(String::from("Successfully save csv file")),
+                        Err(_) => self.state.set_error(String::from("Could not save csv file"))
+                    }
+                  },
+                  Err(_) => self.state.set_error(String::from("Could not get config path"))
+              }
+            }
             Action::Empty => {}
         }
     }
@@ -176,6 +195,7 @@ impl Controller {
             Screen::Main => match key_code {
                 KeyCode::Char('a') => Action::OpenAddScreen,
                 KeyCode::Char('x') => Action::RemoveTask,
+                KeyCode::Char('e') => Action::ExportCSV,
                 KeyCode::Up => Action::MenuUp,
                 KeyCode::Down => Action::MenuDown,
                 KeyCode::Esc => Action::Exit,

@@ -1,5 +1,6 @@
 pub const APP_PATH: &str = "tudu";
 pub const DB_NAME: &str = "tudu.db";
+pub const CSV_NAME: &str = "tudu.csv";
 
 #[derive(Debug, Default, PartialEq)]
 pub enum Screen {
@@ -31,6 +32,7 @@ pub enum Action {
     ResetError,
     AddSecret,
     CheckSecret,
+    ExportCSV
 }
 
 pub const MAX_TASK_TITLE_LENGTH: i32 = 40;
