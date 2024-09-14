@@ -171,7 +171,14 @@ impl Controller {
             Action::ExportCSV(app_config_path) => {
                 self.handle_action(Action::GetTasks);
                 let task_list = self.state.get_task_list();
-                let acp = app_config_path.join(constants::CSV_NAME);
+                let acp = match app_config_path {
+                  Some(acp_option) => acp_option.join(constants::CSV_NAME),
+                  None => {
+                    let temp_acp = get_app_config_path().expect("Could not get app config path");
+                    temp_acp.join(constants::CSV_NAME)
+                  }
+              };
+
                 let write_result = write_tasks_into_csv_file(task_list, &acp);
 
                 match write_result {
@@ -192,18 +199,7 @@ impl Controller {
             Screen::Main => match key_code {
                 KeyCode::Char('a') => Action::OpenAddScreen,
                 KeyCode::Char('x') => Action::RemoveTask,
-                // in order to test it
-                KeyCode::Char('e') => {
-                    let app_config_path = get_app_config_path();
-                    match app_config_path {
-                        Ok(acp) => Action::ExportCSV(acp),
-                        Err(_) => {
-                            self.state
-                                .set_error(String::from("Could not save csv file"));
-                            Action::Empty
-                        }
-                    }
-                }
+                KeyCode::Char('e') => Action::ExportCSV(None),
                 KeyCode::Up => Action::MenuUp,
                 KeyCode::Down => Action::MenuDown,
                 KeyCode::Esc => Action::Exit,
@@ -356,7 +352,7 @@ mod tests {
 
         let mut csv_path = PathBuf::new();
         csv_path.push("./test/csv/");
-        controller.handle_action(Action::ExportCSV(csv_path.clone()));
+        controller.handle_action(Action::ExportCSV(Some(csv_path.clone())));
         let csv_file_exist = file_exists(&csv_path, constants::CSV_NAME);
         assert_eq!(csv_file_exist, true);
 
